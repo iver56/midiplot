@@ -1,11 +1,9 @@
 import argparse
 import math
 from collections import Counter
-from pathlib import Path
 
-import mido
 import matplotlib.pyplot as plt
-
+import mido
 
 NOTE_NAMES_PC = [
     "C",
@@ -22,6 +20,15 @@ NOTE_NAMES_PC = [
     "B",
 ]
 
+VOICE_RANGES = [
+    (["mezzo soprano", "mezzo"], (57, 77)),
+    (["soprano"], (60, 81)),
+    (["alto"], (53, 74)),
+    (["tenor"], (47, 67)),
+    (["baritone"], (43, 64)),
+    (["bass"], (40, 60)),
+]
+
 
 def note_number_to_name(n: int) -> str:
     octave = n // 12 - 1
@@ -32,6 +39,15 @@ def note_number_to_name(n: int) -> str:
 def extract_notes(track):
     """Return a list of MIDI note numbers (0-127) for note_on events."""
     return [msg.note for msg in track if msg.type == "note_on" and msg.velocity > 0]
+
+
+def track_voice_range(track_name: str):
+    lower_name = track_name.lower()
+    for keywords, rng in VOICE_RANGES:
+        for kw in keywords:
+            if kw in lower_name:
+                return rng
+    return None
 
 
 def plot_histograms(midifile_path: str) -> None:
@@ -61,9 +77,14 @@ def plot_histograms(midifile_path: str) -> None:
         counts = Counter(notes)
         xs, ys = zip(*sorted(counts.items()))
 
-        # Determine the actual pitch span and add half-step margin
-        min_note, max_note = min(xs), max(xs)
-        ax.set_xlim(min_note - 0.5, max_note + 0.5)
+        voice_rng = track_voice_range(name)
+        if voice_rng:
+            min_note = min(min(xs), voice_rng[0])
+            max_note = max(max(xs), voice_rng[1])
+        else:
+            min_note, max_note = min(xs), max(xs)
+
+        ax.set_xlim(min_note - 2, max_note + 2)
 
         xtick_positions = [p for p in range(min_note, max_note + 1) if p % 12 == 0]
         if not xtick_positions:
@@ -77,6 +98,15 @@ def plot_histograms(midifile_path: str) -> None:
             ha="right",
             fontsize=8,
         )
+
+        if voice_rng:
+            ax.axvspan(
+                voice_rng[0],
+                voice_rng[1],
+                color="green",
+                alpha=0.2,
+                zorder=0,
+            )
 
         ax.set_xlabel("Pitch")
         ax.set_ylabel("Occurrences")
