@@ -1,6 +1,7 @@
 import argparse
 import math
 from collections import Counter
+from pathlib import Path
 
 import mido
 import matplotlib.pyplot as plt
@@ -51,20 +52,24 @@ def plot_histograms(midifile_path: str) -> None:
     cols = 2
     rows = math.ceil(n / cols)
     fig, axes = plt.subplots(rows, cols, figsize=(cols * 6, rows * 4), squeeze=False)
-
-    # Flatten axes for easy iteration
     ax_list = axes.flatten()
 
-    for ax in ax_list[n:]:  # hide any unused subplots
+    for ax in ax_list[n:]:
         ax.set_visible(False)
 
     for ax, (name, notes) in zip(ax_list, tracks_with_notes):
         counts = Counter(notes)
         xs, ys = zip(*sorted(counts.items()))
-        ax.bar(xs, ys, width=0.8, align="center")
 
-        # X-axis labels: show every octave to avoid clutter
-        xtick_positions = [p for p in range(0, 128) if p % 12 == 0]
+        # Determine the actual pitch span and add half-step margin
+        min_note, max_note = min(xs), max(xs)
+        ax.set_xlim(min_note - 0.5, max_note + 0.5)
+
+        xtick_positions = [p for p in range(min_note, max_note + 1) if p % 12 == 0]
+        if not xtick_positions:
+            xtick_positions = [min_note, max_note]
+
+        ax.bar(xs, ys, width=0.8, align="center")
         ax.set_xticks(xtick_positions)
         ax.set_xticklabels(
             [note_number_to_name(p) for p in xtick_positions],
