@@ -38,6 +38,13 @@ VOICE_RANGES = {
     "Bass 2": {"lower": (36, 39), "green": (40, 60), "upper": (61, 64)},
 }
 
+ALIAS_TO_PART = {
+    "alt 1": "Alto 1",
+    "alt 2": "Alto 2",
+    "sopran 1": "Soprano 1",
+    "sopran 2": "Soprano 2",
+}
+
 
 def note_number_to_name(n: int) -> str:
     octave = n // 12 - 1
@@ -55,6 +62,9 @@ def track_voice_zones(track_name: str):
     for part, zones in VOICE_RANGES.items():
         if part.lower() in lower_name:
             return zones
+    for alias, canonical in ALIAS_TO_PART.items():
+        if alias in lower_name:
+            return VOICE_RANGES[canonical]
     return None
 
 
