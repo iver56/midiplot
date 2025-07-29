@@ -71,16 +71,25 @@ def track_voice_zones(track_name: str):
 def plot_histograms(midifile_path: str) -> None:
     midi = mido.MidiFile(midifile_path)
     tracks_with_notes = []
+    note_counts = []
+    total_notes = 0
 
     for idx, track in enumerate(midi.tracks):
         notes = extract_notes(track)
         if notes:
             name = track.name or f"Track {idx}"
             tracks_with_notes.append((name, notes))
+            count = len(notes)
+            note_counts.append((name, count))
+            total_notes += count
 
     if not tracks_with_notes:
         print("No note-on events found.")
         return
+
+    for name, count in note_counts:
+        print(f"{name}: {count}")
+    print(f"Total: {total_notes}")
 
     n = len(tracks_with_notes)
     cols = 2
