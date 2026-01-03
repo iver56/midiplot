@@ -63,15 +63,27 @@ def extract_notes_from_track(track) -> List[int]:
     return [msg.note for msg in track if msg.type == "note_on" and msg.velocity > 0]
 
 
+
 def get_voice_zones(name_identifier: str) -> Optional[dict]:
     """Find voice ranges based on a string (track name or filename)."""
     lower_name = name_identifier.lower()
-    for part, zones in VOICE_RANGES.items():
+
+    # 1. Check Canonical Names
+    # Sort keys by length descending so "Bass 2" (len 6) is checked before "Bass" (len 4)
+    # and "Soprano 1" is checked before "Soprano".
+    sorted_parts = sorted(VOICE_RANGES.keys(), key=len, reverse=True)
+    for part in sorted_parts:
         if part.lower() in lower_name:
-            return zones
-    for alias, canonical in ALIAS_TO_PART.items():
+            return VOICE_RANGES[part]
+
+    # 2. Check Aliases
+    # Same logic: "sopran 2" must be checked before "sopran"
+    sorted_aliases = sorted(ALIAS_TO_PART.keys(), key=len, reverse=True)
+    for alias in sorted_aliases:
         if alias in lower_name:
+            canonical = ALIAS_TO_PART[alias]
             return VOICE_RANGES[canonical]
+
     return None
 
 
